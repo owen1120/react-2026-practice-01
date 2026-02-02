@@ -30,10 +30,10 @@ export default function AdminLayout() {
              Swal.fire({
                icon: "error",
                title: "驗證失敗",
-               text: "憑證過期或無效，請重新登入",
+               text: error.response?.data?.message || "憑證過期或無效，請重新登入",
                background: '#1f1f1f',
                color: '#ffffff',
-               confirmButtonColor: '#00c3ff',
+               confirmButtonColor: '#00c3ff', 
                timer: 3000,
                timerProgressBar: true
              });
@@ -43,15 +43,13 @@ export default function AdminLayout() {
       }
     };
 
-    // 執行驗證
     checkLogin();
-    
-  }, [navigate, location]);
+  }, [navigate, location]); 
 
   const handleLogout = () => {
     document.cookie = "hexToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
     
-    // 登出提示
+    // 登出時也給個提示
     Swal.fire({
       icon: "success",
       title: "已登出",

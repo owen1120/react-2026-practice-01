@@ -1,142 +1,274 @@
-function ProductModal({ 
-  isOpen,
-  setIsOpen,
-  modalType,
-  tempProduct, 
-  handleModalInputChange,
-  handleUpdateProduct
-}) {
-  
+import { useEffect, useState } from "react";
+import axios from "axios";
+import Swal from "sweetalert2";
+
+const API_BASE = import.meta.env.VITE_API_BASE;
+const API_PATH = import.meta.env.VITE_API_PATH;
+
+export default function ProductModal({ isOpen, tempProduct, getProducts, closeProductModal, isNew }) {
+  const [modalData, setModalData] = useState(tempProduct);
+
+  useEffect(() => {
+    if (isOpen) {
+      setModalData({
+        ...tempProduct,
+        imagesUrl: tempProduct.imagesUrl || [],
+      });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen]);
+
+  const handleInputChange = (e) => {
+    const { name, value, type, checked } = e.target;
+    setModalData({
+      ...modalData,
+      [name]: type === "checkbox" ? checked : value,
+    });
+  };
+
+  const handleImageChange = (e, index) => {
+    const { value } = e.target;
+    const newImages = [...modalData.imagesUrl];
+    newImages[index] = value;
+    setModalData({ ...modalData, imagesUrl: newImages });
+  };
+
+  const addImage = () => {
+    const newImages = [...modalData.imagesUrl, ""];
+    setModalData({ ...modalData, imagesUrl: newImages });
+  };
+
+  const removeImage = () => {
+    const newImages = [...modalData.imagesUrl];
+    newImages.pop();
+    setModalData({ ...modalData, imagesUrl: newImages });
+  };
+
+  const submit = async () => {
+    const dataToSend = {
+      ...modalData,
+      origin_price: Number(modalData.origin_price),
+      price: Number(modalData.price),
+    };
+
+    try {
+      let api = `${API_BASE}/api/${API_PATH}/admin/product`;
+      let method = "post";
+
+      if (!isNew) {
+        api = `${API_BASE}/api/${API_PATH}/admin/product/${modalData.id}`;
+        method = "put";
+      }
+
+      await axios[method](api, { data: dataToSend });
+      
+      Swal.fire({
+        icon: 'success',
+        title: isNew ? '新增成功' : '更新成功',
+        showConfirmButton: false,
+        timer: 1500,
+        background: '#1f1f1f',
+        color: '#ffffff'
+      });
+
+      getProducts();
+      closeProductModal();
+    } catch (error) {
+      Swal.fire({
+        icon: 'error',
+        title: '操作失敗',
+        text: error.response?.data?.message,
+        background: '#1f1f1f',
+        color: '#ffffff'
+      });
+    }
+  };
+
   if (!isOpen) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsOpen(false)}></div>
-      
-      <div className="relative bg-gray-900/90 backdrop-blur-xl border border-white/20 rounded-3xl shadow-2xl w-full max-w-3xl p-8 text-white overflow-y-auto max-h-[90vh] animate-fade-in-up">
-        <h2 className="text-2xl font-bold mb-6">
-          {modalType === 'create' ? '建立新商品' : '編輯商品'}
-        </h2>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 overflow-y-auto">
+      <div className="bg-dark-bg-800 border border-dark-bg-700 w-full max-w-4xl rounded-sm shadow-2xl flex flex-col max-h-[90vh]">
         
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-          <div className="space-y-4">
-            <div className="flex flex-col gap-2">
-              <label>主圖網址</label>
-              <input 
-                name="imageUrl" 
-                value={tempProduct.imageUrl} 
-                onChange={handleModalInputChange} 
-                className="p-2 rounded bg-white/10 border border-white/20 focus:outline-none focus:border-blue-500" 
-                placeholder="請輸入圖片網址" 
-              />
-              {tempProduct.imageUrl && (
-                <img src={tempProduct.imageUrl} alt="主圖預覽" className="w-full h-48 object-cover rounded-lg border border-white/10" />
-              )}
-            </div>
-          </div>
+        <div className="flex justify-between items-center p-5 border-b border-dark-bg-700">
+          <h3 className="text-xl font-bold text-white tracking-wide">
+            {isNew ? "建立新產品" : "編輯產品"}
+          </h3>
+          <button onClick={closeProductModal} className="text-dark-text-500 hover:text-white transition">
+            ✕
+          </button>
+        </div>
 
-          <div className="space-y-4">
-            <div>
-              <label className="block text-sm text-gray-400 mb-1">標題</label>
-              <input 
-                name="title" 
-                value={tempProduct.title} 
-                onChange={handleModalInputChange} 
-                className="w-full p-2 rounded bg-white/10 border border-white/20 focus:outline-none focus:border-blue-500" 
-                placeholder="請輸入產品標題" 
-              />
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm text-gray-400 mb-1">分類</label>
-                <input 
-                  name="category" 
-                  value={tempProduct.category} 
-                  onChange={handleModalInputChange} 
-                  className="w-full p-2 rounded bg-white/10 border border-white/20" 
-                  placeholder="例如: 衣服" 
-                />
-              </div>
-              <div>
-                <label className="block text-sm text-gray-400 mb-1">單位</label>
-                <input 
-                  name="unit" 
-                  value={tempProduct.unit} 
-                  onChange={handleModalInputChange} 
-                  className="w-full p-2 rounded bg-white/10 border border-white/20" 
-                  placeholder="例如: 件" 
-                />
-              </div>
-            </div>
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="block text-sm text-gray-400 mb-1">原價</label>
-                <input 
-                  type="number" 
-                  name="origin_price" 
-                  value={tempProduct.origin_price} 
-                  onChange={handleModalInputChange} 
-                  className="w-full p-2 rounded bg-white/10 border border-white/20" 
-                  placeholder="輸入原價" 
-                />
-              </div>
-              <div>
-                <label className="block text-sm text-gray-400 mb-1">售價</label>
-                <input 
-                  type="number" 
-                  name="price" 
-                  value={tempProduct.price} 
-                  onChange={handleModalInputChange} 
-                  className="w-full p-2 rounded bg-white/10 border border-white/20" 
-                  placeholder="輸入售價" 
-                />
-              </div>
-            </div>
+        <div className="p-6 overflow-y-auto custom-scrollbar">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             
-            <hr className="border-white/10" />
-            
-            <div>
-              <label className="block text-sm text-gray-400 mb-1">產品描述</label>
-              <textarea 
-                name="description" 
-                value={tempProduct.description} 
-                onChange={handleModalInputChange} 
-                className="w-full p-2 rounded bg-white/10 border border-white/20 h-20" 
-                placeholder="產品描述"
-              ></textarea>
+            <div className="col-span-1 space-y-4">
+              <div>
+                <label className="block text-sm font-bold text-dark-text-300 mb-2">主要圖片網址</label>
+                <input
+                  type="text"
+                  name="imageUrl"
+                  value={modalData.imageUrl || ""}
+                  onChange={handleInputChange}
+                  className="w-full bg-dark-bg-900 border border-dark-bg-700 text-white p-2 rounded-sm focus:border-tech-blue-500 outline-none"
+                  placeholder="請輸入圖片連結"
+                />
+                {modalData.imageUrl && (
+                  <img src={modalData.imageUrl} alt="主圖" className="w-full h-40 object-cover mt-2 rounded-sm border border-dark-bg-700" />
+                )}
+              </div>
+
+              <div className="border-t border-dark-bg-700 pt-4">
+                 <label className="block text-sm font-bold text-dark-text-300 mb-2">更多圖片</label>
+                 {modalData.imagesUrl?.map((url, index) => (
+                   <div key={index} className="mb-3">
+                     <input
+                        type="text"
+                        value={url}
+                        onChange={(e) => handleImageChange(e, index)}
+                        className="w-full bg-dark-bg-900 border border-dark-bg-700 text-white p-2 rounded-sm focus:border-tech-blue-500 outline-none mb-1"
+                        placeholder={`圖片網址 ${index + 1}`}
+                      />
+                      {url && <img src={url} alt={`圖 ${index+1}`} className="w-full h-24 object-cover rounded-sm" />}
+                   </div>
+                 ))}
+                 
+                 <div className="flex gap-2 mt-2">
+                   {(!modalData.imagesUrl?.length || modalData.imagesUrl[modalData.imagesUrl.length - 1]) && (
+                     <button onClick={addImage} className="flex-1 py-2 border border-tech-blue-500 text-tech-blue-500 rounded-sm hover:bg-tech-blue-500 hover:text-white transition text-sm font-bold">
+                       新增圖片
+                     </button>
+                   )}
+                   {modalData.imagesUrl?.length > 0 && (
+                     <button onClick={removeImage} className="flex-1 py-2 border border-red-500 text-red-500 rounded-sm hover:bg-red-500 hover:text-white transition text-sm font-bold">
+                       刪除最後一張
+                     </button>
+                   )}
+                 </div>
+              </div>
             </div>
-            <div>
-              <label className="block text-sm text-gray-400 mb-1">說明內容</label>
-              <textarea 
-                name="content" 
-                value={tempProduct.content} 
-                onChange={handleModalInputChange} 
-                className="w-full p-2 rounded bg-white/10 border border-white/20 h-20" 
-                placeholder="產品說明"
-              ></textarea>
-            </div>
-            
-            <div className="flex items-center gap-2">
-              <input 
-                type="checkbox" 
-                id="is_enabled" 
-                name="is_enabled" 
-                checked={tempProduct.is_enabled} 
-                onChange={handleModalInputChange}
-                className="w-5 h-5 accent-blue-500"
-              />
-              <label htmlFor="is_enabled" className="cursor-pointer select-none">是否啟用</label>
+
+            <div className="col-span-2 space-y-4">
+              <div>
+                <label className="block text-sm font-bold text-dark-text-300 mb-2">標題</label>
+                <input
+                  type="text"
+                  name="title"
+                  value={modalData.title || ""}
+                  onChange={handleInputChange}
+                  className="w-full bg-dark-bg-900 border border-dark-bg-700 text-white p-2 rounded-sm focus:border-tech-blue-500 outline-none"
+                  placeholder="請輸入產品標題"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-bold text-dark-text-300 mb-2">分類</label>
+                  <input
+                    type="text"
+                    name="category"
+                    value={modalData.category || ""}
+                    onChange={handleInputChange}
+                    className="w-full bg-dark-bg-900 border border-dark-bg-700 text-white p-2 rounded-sm focus:border-tech-blue-500 outline-none"
+                    placeholder="例如：鍵盤"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-dark-text-300 mb-2">單位</label>
+                  <input
+                    type="text"
+                    name="unit"
+                    value={modalData.unit || ""}
+                    onChange={handleInputChange}
+                    className="w-full bg-dark-bg-900 border border-dark-bg-700 text-white p-2 rounded-sm focus:border-tech-blue-500 outline-none"
+                    placeholder="例如：個、組"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-sm font-bold text-dark-text-300 mb-2">原價</label>
+                  <input
+                    type="number"
+                    name="origin_price"
+                    value={modalData.origin_price || ""}
+                    onChange={handleInputChange}
+                    className="w-full bg-dark-bg-900 border border-dark-bg-700 text-white p-2 rounded-sm focus:border-tech-blue-500 outline-none"
+                    placeholder="請輸入原價"
+                  />
+                </div>
+                <div>
+                  <label className="block text-sm font-bold text-dark-text-300 mb-2">售價</label>
+                  <input
+                    type="number"
+                    name="price"
+                    value={modalData.price || ""}
+                    onChange={handleInputChange}
+                    className="w-full bg-dark-bg-900 border border-dark-bg-700 text-white p-2 rounded-sm focus:border-tech-blue-500 outline-none"
+                    placeholder="請輸入售價"
+                  />
+                </div>
+              </div>
+
+              <hr className="border-dark-bg-700 my-4" />
+
+              <div>
+                <label className="block text-sm font-bold text-dark-text-300 mb-2">產品描述</label>
+                <textarea
+                  name="description"
+                  value={modalData.description || ""}
+                  onChange={handleInputChange}
+                  className="w-full bg-dark-bg-900 border border-dark-bg-700 text-white p-2 rounded-sm focus:border-tech-blue-500 outline-none h-20"
+                  placeholder="請輸入產品描述"
+                ></textarea>
+              </div>
+
+              <div>
+                <label className="block text-sm font-bold text-dark-text-300 mb-2">說明內容</label>
+                <textarea
+                  name="content"
+                  value={modalData.content || ""}
+                  onChange={handleInputChange}
+                  className="w-full bg-dark-bg-900 border border-dark-bg-700 text-white p-2 rounded-sm focus:border-tech-blue-500 outline-none h-24"
+                  placeholder="請輸入詳細說明內容"
+                ></textarea>
+              </div>
+
+              <div className="flex items-center gap-2 mt-4">
+                <input
+                  id="is_enabled"
+                  type="checkbox"
+                  name="is_enabled"
+                  checked={modalData.is_enabled || false}
+                  onChange={handleInputChange}
+                  className="w-5 h-5 accent-tech-blue-500"
+                />
+                <label htmlFor="is_enabled" className="text-white font-bold cursor-pointer">
+                  是否啟用
+                </label>
+              </div>
+
             </div>
           </div>
         </div>
 
-        <div className="flex justify-end gap-4">
-          <button onClick={() => setIsOpen(false)} className="px-6 py-2 rounded-lg border border-white/20 hover:bg-white/10 transition">取消</button>
-          <button onClick={handleUpdateProduct} className="px-6 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 transition shadow-lg font-bold">確認儲存</button>
+        <div className="p-4 border-t border-dark-bg-700 flex justify-end gap-3 bg-dark-bg-900/50 rounded-b-sm">
+           <button 
+             onClick={closeProductModal}
+             className="px-6 py-2 border border-dark-text-500 text-dark-text-300 rounded-sm hover:bg-dark-bg-700 hover:text-white transition font-bold"
+           >
+             取消
+           </button>
+           <button 
+             onClick={submit}
+             className="px-6 py-2 bg-tech-blue-600 text-white rounded-sm hover:bg-tech-blue-500 shadow-lg shadow-tech-blue-900/30 transition font-bold"
+           >
+             確認儲存
+           </button>
         </div>
+
       </div>
     </div>
   );
 }
-
-export default ProductModal;

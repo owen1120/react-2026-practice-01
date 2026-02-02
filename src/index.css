@@ -1,68 +1,29 @@
-:root {
-  font-family: system-ui, Avenir, Helvetica, Arial, sans-serif;
-  line-height: 1.5;
-  font-weight: 400;
+@import "tailwindcss";
 
-  color-scheme: light dark;
-  color: rgba(255, 255, 255, 0.87);
-  background-color: #242424;
+@theme {
+  
+  /* 核心強調色 */
+  --color-tech-blue-400: #00c3ff;
+  --color-tech-blue-500: #00ace0;
+  --color-tech-blue-600: #008bb5;
 
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
+  /* 背景色階 */
+  --color-dark-bg-950: #0a0a0a;
+  --color-dark-bg-900: #141414;
+  --color-dark-bg-800: #1f1f1f;
+  --color-dark-bg-700: #2d2d2d;
 
-a {
-  font-weight: 500;
-  color: #646cff;
-  text-decoration: inherit;
-}
-a:hover {
-  color: #535bf2;
+  /* 文字色階 */
+  --color-dark-text-100: #ffffff;
+  --color-dark-text-300: #d1d5db;
+  --color-dark-text-500: #9ca3af;
 }
 
 body {
-  margin: 0;
-  display: flex;
-  place-items: center;
-  min-width: 320px;
-  min-height: 100vh;
+  @apply bg-dark-bg-950 text-dark-text-300;
 }
 
-h1 {
-  font-size: 3.2em;
-  line-height: 1.1;
-}
-
-button {
-  border-radius: 8px;
-  border: 1px solid transparent;
-  padding: 0.6em 1.2em;
-  font-size: 1em;
-  font-weight: 500;
-  font-family: inherit;
-  background-color: #1a1a1a;
-  cursor: pointer;
-  transition: border-color 0.25s;
-}
-button:hover {
-  border-color: #646cff;
-}
-button:focus,
-button:focus-visible {
-  outline: 4px auto -webkit-focus-ring-color;
-}
-
-@media (prefers-color-scheme: light) {
-  :root {
-    color: #213547;
-    background-color: #ffffff;
-  }
-  a:hover {
-    color: #747bff;
-  }
-  button {
-    background-color: #f9f9f9;
-  }
+div:where(.swal2-container).swal2-top-end > .swal2-popup, 
+div:where(.swal2-container).swal2-top-right > .swal2-popup {
+  @apply !bg-dark-bg-800 !text-dark-text-100 !border !border-dark-bg-700;
 }
