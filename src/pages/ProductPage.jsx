@@ -2,6 +2,9 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import Swal from "sweetalert2";
 
+import ProductModal from "../components/ProductModal";
+import Pagination from "../components/Pagination";
+
 const API_BASE = import.meta.env.VITE_API_BASE;
 const API_PATH = import.meta.env.VITE_API_PATH;
 
@@ -22,17 +25,22 @@ function ProductPage({ handleLogout }) {
   const [products, setProducts] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   
-  const [isProductModalOpen, setIsProductModalOpen] = useState(false);
-  const [modalType, setModalType] = useState("");
-  const [tempProduct, setTempProduct] = useState(defaultModalState);
+  const [isProductModalOpen, setIsProductModalOpen] = useState(false); 
+  const [modalType, setModalType] = useState(""); 
+  const [tempProduct, setTempProduct] = useState(defaultModalState); 
   
-  const [detailProduct, setDetailProduct] = useState(null);
+  const [detailProduct, setDetailProduct] = useState(null); 
 
-  const getProducts = async () => {
+  const [pageInfo, setPageInfo] = useState({});
+
+  const getProducts = async (page = 1) => {
     setIsLoading(true);
     try {
-      const res = await axios.get(`${API_BASE}/api/${API_PATH}/admin/products`);
+      const res = await axios.get(`${API_BASE}/api/${API_PATH}/admin/products?page=${page}`);
+      
       setProducts(res.data.products);
+      setPageInfo(res.data.pagination);
+      
     } catch (error) {
       console.error(error);
       alert("取得產品失敗，請稍後再試");
@@ -93,13 +101,10 @@ function ProductPage({ handleLogout }) {
       });
 
       setIsProductModalOpen(false);
-      getProducts();
+      getProducts(pageInfo.current_page || 1); 
     } catch (error) {
-      Swal.fire({
-        icon: "error",
-        title: "操作失敗",
-        text: error.response?.data?.message,
-      });
+      console.error(error);
+      Swal.fire("錯誤!", error?.response?.data?.message || "操作失敗", "error");
     }
   };
 
@@ -119,7 +124,7 @@ function ProductPage({ handleLogout }) {
       try {
         await axios.delete(`${API_BASE}/api/${API_PATH}/admin/product/${product.id}`);
         Swal.fire("已刪除!", "產品已成功刪除", "success");
-        getProducts();
+        getProducts(pageInfo.current_page);
       } catch (error) {
         console.error(error);
         Swal.fire("錯誤!", "刪除失敗", "error");
@@ -148,11 +153,11 @@ function ProductPage({ handleLogout }) {
         </div>
       </div>
 
-      <div className="max-w-6xl mx-auto bg-white/10 backdrop-blur-xl rounded-3xl border border-white/20 shadow-2xl p-6 overflow-hidden">
+      <div className="max-w-6xl mx-auto bg-white/10 backdrop-blur-xl rounded-3xl border border-white/20 shadow-2xl p-6 overflow-hidden flex flex-col min-h-125">
         {isLoading && <div className="text-center py-10 animate-pulse">資料載入中...</div>}
 
         {!isLoading && (
-          <div className="overflow-x-auto">
+          <div className="overflow-x-auto grow">
             <table className="w-full text-left border-collapse">
               <thead>
                 <tr className="border-b border-white/20 text-white/80">
@@ -197,92 +202,29 @@ function ProductPage({ handleLogout }) {
             </table>
           </div>
         )}
+
+        {pageInfo.total_pages > 1 && (
+          <Pagination pageInfo={pageInfo} handlePageChange={getProducts} />
+        )}
       </div>
 
-      {isProductModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-          <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setIsProductModalOpen(false)}></div>
-          <div className="relative bg-gray-900/90 backdrop-blur-xl border border-white/20 rounded-3xl shadow-2xl w-full max-w-3xl p-8 text-white overflow-y-auto max-h-[90vh]">
-            <h2 className="text-2xl font-bold mb-6">{modalType === 'create' ? '建立新商品' : '編輯商品'}</h2>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
-              <div className="space-y-4">
-                <div className="flex flex-col gap-2">
-                  <label>主圖網址</label>
-                  <input name="imageUrl" value={tempProduct.imageUrl} onChange={handleModalInputChange} className="p-2 rounded bg-white/10 border border-white/20 focus:outline-none focus:border-blue-500" placeholder="請輸入圖片網址" />
-                  {tempProduct.imageUrl && <img src={tempProduct.imageUrl} alt="主圖預覽" className="w-full h-48 object-cover rounded-lg border border-white/10" />}
-                </div>
-              </div>
-
-              <div className="space-y-4">
-                <div>
-                  <label className="block text-sm text-gray-400 mb-1">標題</label>
-                  <input name="title" value={tempProduct.title} onChange={handleModalInputChange} className="w-full p-2 rounded bg-white/10 border border-white/20 focus:outline-none focus:border-blue-500" placeholder="請輸入產品標題" />
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm text-gray-400 mb-1">分類</label>
-                    <input name="category" value={tempProduct.category} onChange={handleModalInputChange} className="w-full p-2 rounded bg-white/10 border border-white/20" placeholder="例如: 衣服" />
-                  </div>
-                  <div>
-                    <label className="block text-sm text-gray-400 mb-1">單位</label>
-                    <input name="unit" value={tempProduct.unit} onChange={handleModalInputChange} className="w-full p-2 rounded bg-white/10 border border-white/20" placeholder="例如: 件" />
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-sm text-gray-400 mb-1">原價</label>
-                    <input type="number" name="origin_price" value={tempProduct.origin_price} onChange={handleModalInputChange} className="w-full p-2 rounded bg-white/10 border border-white/20" placeholder="輸入原價" />
-                  </div>
-                  <div>
-                    <label className="block text-sm text-gray-400 mb-1">售價</label>
-                    <input type="number" name="price" value={tempProduct.price} onChange={handleModalInputChange} className="w-full p-2 rounded bg-white/10 border border-white/20" placeholder="輸入售價" />
-                  </div>
-                </div>
-                
-                <hr className="border-white/10" />
-                
-                <div>
-                  <label className="block text-sm text-gray-400 mb-1">產品描述</label>
-                  <textarea name="description" value={tempProduct.description} onChange={handleModalInputChange} className="w-full p-2 rounded bg-white/10 border border-white/20 h-20" placeholder="產品描述"></textarea>
-                </div>
-                <div>
-                  <label className="block text-sm text-gray-400 mb-1">說明內容</label>
-                  <textarea name="content" value={tempProduct.content} onChange={handleModalInputChange} className="w-full p-2 rounded bg-white/10 border border-white/20 h-20" placeholder="產品說明"></textarea>
-                </div>
-                
-                <div className="flex items-center gap-2">
-                  <input 
-                    type="checkbox" 
-                    id="is_enabled" 
-                    name="is_enabled" 
-                    checked={tempProduct.is_enabled} 
-                    onChange={handleModalInputChange}
-                    className="w-5 h-5 accent-blue-500"
-                  />
-                  <label htmlFor="is_enabled" className="cursor-pointer select-none">是否啟用</label>
-                </div>
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-4">
-              <button onClick={() => setIsProductModalOpen(false)} className="px-6 py-2 rounded-lg border border-white/20 hover:bg-white/10 transition">取消</button>
-              <button onClick={handleUpdateProduct} className="px-6 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 transition shadow-lg font-bold">確認儲存</button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ProductModal 
+        isOpen={isProductModalOpen}
+        setIsOpen={setIsProductModalOpen}
+        modalType={modalType}
+        tempProduct={tempProduct}
+        handleModalInputChange={handleModalInputChange}
+        handleUpdateProduct={handleUpdateProduct}
+      />
 
       {detailProduct && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
           <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={() => setDetailProduct(null)}></div>
           <div className="relative bg-gray-900/90 backdrop-blur-xl border border-white/20 rounded-3xl shadow-2xl max-w-4xl w-full flex flex-col md:flex-row text-white p-6 gap-6 animate-fade-in-up">
             <button onClick={() => setDetailProduct(null)} className="absolute top-4 right-4 p-2 bg-white/10 hover:bg-white/20 rounded-full transition z-10">✕</button>
-            
             <div className="md:w-1/2 aspect-4/3 rounded-2xl overflow-hidden border border-white/10">
               <img src={detailProduct.imageUrl} alt={detailProduct.title} className="w-full h-full object-cover" />
             </div>
-            
             <div className="md:w-1/2 flex flex-col">
               <span className="px-3 py-1 bg-purple-500/30 text-purple-200 text-sm w-fit rounded-lg mb-3">{detailProduct.category}</span>
               <h2 className="text-3xl font-bold mb-2">{detailProduct.title}</h2>
