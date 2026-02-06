@@ -74,10 +74,18 @@ export default function ProductModal({ isOpen, tempProduct, getProducts, closePr
       getProducts();
       closeProductModal();
     } catch (error) {
+      let errorMessage = error.response?.data?.message;
+      
+      if (Array.isArray(errorMessage)) {
+        errorMessage = errorMessage.join("、"); 
+      } else if (!errorMessage) {
+        errorMessage = "操作失敗，請檢查網路或聯繫管理員";
+      }
+
       Swal.fire({
         icon: 'error',
         title: '操作失敗',
-        text: error.response?.data?.message,
+        text: errorMessage,
         background: '#1f1f1f',
         color: '#ffffff'
       });
@@ -90,6 +98,7 @@ export default function ProductModal({ isOpen, tempProduct, getProducts, closePr
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4 overflow-y-auto">
       <div className="bg-dark-bg-800 border border-dark-bg-700 w-full max-w-4xl rounded-sm shadow-2xl flex flex-col max-h-[90vh]">
         
+        {/* Header */}
         <div className="flex justify-between items-center p-5 border-b border-dark-bg-700">
           <h3 className="text-xl font-bold text-white tracking-wide">
             {isNew ? "建立新產品" : "編輯產品"}
@@ -99,13 +108,18 @@ export default function ProductModal({ isOpen, tempProduct, getProducts, closePr
           </button>
         </div>
 
+        {/* Body */}
         <div className="p-6 overflow-y-auto custom-scrollbar">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             
+            {/* 左側：圖片設定 */}
             <div className="col-span-1 space-y-4">
               <div>
-                <label className="block text-sm font-bold text-dark-text-300 mb-2">主要圖片網址</label>
+                <label htmlFor="imageUrl" className="block text-sm font-bold text-dark-text-300 mb-2">
+                  主要圖片網址
+                </label>
                 <input
+                  id="imageUrl"
                   type="text"
                   name="imageUrl"
                   value={modalData.imageUrl || ""}
@@ -118,18 +132,23 @@ export default function ProductModal({ isOpen, tempProduct, getProducts, closePr
                 )}
               </div>
 
+              {/* 多圖設定 */}
               <div className="border-t border-dark-bg-700 pt-4">
-                 <label className="block text-sm font-bold text-dark-text-300 mb-2">更多圖片</label>
+                 <h4 className="block text-sm font-bold text-dark-text-300 mb-2">更多圖片</h4>
                  {modalData.imagesUrl?.map((url, index) => (
                    <div key={index} className="mb-3">
+                     <label htmlFor={`imagesUrl-${index}`} className="text-xs text-dark-text-500 mb-1 block">
+                       圖片網址 {index + 1}
+                     </label>
                      <input
+                        id={`imagesUrl-${index}`}
                         type="text"
                         value={url}
                         onChange={(e) => handleImageChange(e, index)}
                         className="w-full bg-dark-bg-900 border border-dark-bg-700 text-white p-2 rounded-sm focus:border-tech-blue-500 outline-none mb-1"
-                        placeholder={`圖片網址 ${index + 1}`}
+                        placeholder={`https://...`}
                       />
-                      {url && <img src={url} alt={`圖 ${index+1}`} className="w-full h-24 object-cover rounded-sm" />}
+                      {url && <img src={url} alt={`副圖 ${index+1}`} className="w-full h-24 object-cover rounded-sm mt-1 border border-dark-bg-700" />}
                    </div>
                  ))}
                  
@@ -148,10 +167,12 @@ export default function ProductModal({ isOpen, tempProduct, getProducts, closePr
               </div>
             </div>
 
+            {/* 右側：表單資料 */}
             <div className="col-span-2 space-y-4">
               <div>
-                <label className="block text-sm font-bold text-dark-text-300 mb-2">標題</label>
+                <label htmlFor="title" className="block text-sm font-bold text-dark-text-300 mb-2">標題</label>
                 <input
+                  id="title"
                   type="text"
                   name="title"
                   value={modalData.title || ""}
@@ -163,8 +184,9 @@ export default function ProductModal({ isOpen, tempProduct, getProducts, closePr
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-bold text-dark-text-300 mb-2">分類</label>
+                  <label htmlFor="category" className="block text-sm font-bold text-dark-text-300 mb-2">分類</label>
                   <input
+                    id="category"
                     type="text"
                     name="category"
                     value={modalData.category || ""}
@@ -174,23 +196,26 @@ export default function ProductModal({ isOpen, tempProduct, getProducts, closePr
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-dark-text-300 mb-2">單位</label>
+                  <label htmlFor="unit" className="block text-sm font-bold text-dark-text-300 mb-2">單位</label>
                   <input
+                    id="unit"
                     type="text"
                     name="unit"
                     value={modalData.unit || ""}
                     onChange={handleInputChange}
                     className="w-full bg-dark-bg-900 border border-dark-bg-700 text-white p-2 rounded-sm focus:border-tech-blue-500 outline-none"
-                    placeholder="例如：個、組"
+                    placeholder="例如：個"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm font-bold text-dark-text-300 mb-2">原價</label>
+                  <label htmlFor="origin_price" className="block text-sm font-bold text-dark-text-300 mb-2">原價</label>
                   <input
+                    id="origin_price"
                     type="number"
+                    min="0"
                     name="origin_price"
                     value={modalData.origin_price || ""}
                     onChange={handleInputChange}
@@ -199,9 +224,11 @@ export default function ProductModal({ isOpen, tempProduct, getProducts, closePr
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-bold text-dark-text-300 mb-2">售價</label>
+                  <label htmlFor="price" className="block text-sm font-bold text-dark-text-300 mb-2">售價</label>
                   <input
+                    id="price"
                     type="number"
+                    min="0"
                     name="price"
                     value={modalData.price || ""}
                     onChange={handleInputChange}
@@ -214,8 +241,9 @@ export default function ProductModal({ isOpen, tempProduct, getProducts, closePr
               <hr className="border-dark-bg-700 my-4" />
 
               <div>
-                <label className="block text-sm font-bold text-dark-text-300 mb-2">產品描述</label>
+                <label htmlFor="description" className="block text-sm font-bold text-dark-text-300 mb-2">產品描述</label>
                 <textarea
+                  id="description"
                   name="description"
                   value={modalData.description || ""}
                   onChange={handleInputChange}
@@ -225,8 +253,9 @@ export default function ProductModal({ isOpen, tempProduct, getProducts, closePr
               </div>
 
               <div>
-                <label className="block text-sm font-bold text-dark-text-300 mb-2">說明內容</label>
+                <label htmlFor="content" className="block text-sm font-bold text-dark-text-300 mb-2">說明內容</label>
                 <textarea
+                  id="content"
                   name="content"
                   value={modalData.content || ""}
                   onChange={handleInputChange}
@@ -242,9 +271,9 @@ export default function ProductModal({ isOpen, tempProduct, getProducts, closePr
                   name="is_enabled"
                   checked={modalData.is_enabled || false}
                   onChange={handleInputChange}
-                  className="w-5 h-5 accent-tech-blue-500"
+                  className="w-5 h-5 accent-tech-blue-500 cursor-pointer"
                 />
-                <label htmlFor="is_enabled" className="text-white font-bold cursor-pointer">
+                <label htmlFor="is_enabled" className="text-white font-bold cursor-pointer select-none">
                   是否啟用
                 </label>
               </div>
@@ -253,6 +282,7 @@ export default function ProductModal({ isOpen, tempProduct, getProducts, closePr
           </div>
         </div>
 
+        {/* Footer */}
         <div className="p-4 border-t border-dark-bg-700 flex justify-end gap-3 bg-dark-bg-900/50 rounded-b-sm">
            <button 
              onClick={closeProductModal}

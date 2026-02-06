@@ -24,32 +24,36 @@ export default function AdminLayout() {
         
       } catch (error) {
         console.error(error);
-        
+
         if (!location.pathname.includes("/login")) {
-             
              Swal.fire({
                icon: "error",
                title: "驗證失敗",
-               text: error.response?.data?.message || "憑證過期或無效，請重新登入",
+               text: "憑證過期或無效，請重新登入",
                background: '#1f1f1f',
                color: '#ffffff',
-               confirmButtonColor: '#00c3ff', 
+               confirmButtonColor: '#00c3ff',
                timer: 3000,
                timerProgressBar: true
              });
-
              navigate("/login");
         }
       }
     };
-
     checkLogin();
   }, [navigate, location]); 
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    try {
+      await axios.post(`${API_BASE}/logout`);
+    } catch (error) {
+      console.warn("登出 API 呼叫失敗 (可能 Token 已過期)", error);
+    }
+
     document.cookie = "hexToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
     
-    // 登出時也給個提示
+    delete axios.defaults.headers.common["Authorization"];
+
     Swal.fire({
       icon: "success",
       title: "已登出",
@@ -72,7 +76,6 @@ export default function AdminLayout() {
 
   return (
     <div className="flex min-h-screen bg-dark-bg-950 text-dark-text-300 font-sans">
-      {/* 側邊欄 */}
       <aside className="w-64 bg-dark-bg-900 border-r border-dark-bg-700 flex flex-col fixed h-full z-10">
         <div className="p-6 border-b border-dark-bg-700">
            <h2 className="text-xl font-bold text-white tracking-widest flex items-center gap-2">
@@ -110,7 +113,6 @@ export default function AdminLayout() {
         </div>
       </aside>
 
-      {/* 主內容區域 */}
       <main className="flex-1 ml-64 p-8">
         <Outlet />
       </main>

@@ -1,8 +1,8 @@
 import { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import Swal from "sweetalert2";
 
-// 讀取環境變數
 const API_BASE = import.meta.env.VITE_API_BASE;
 
 export default function LoginPage() {
@@ -22,31 +22,30 @@ export default function LoginPage() {
     e.preventDefault();
     setIsLoading(true);
     try {
-      // 發送登入請求
       const res = await axios.post(`${API_BASE}/admin/signin`, formData);
       const { token, expired } = res.data;
       
-      // 將 Token 存入 Cookie
       document.cookie = `hexToken=${token}; expires=${new Date(expired)};`;
-      
-      // 設定 axios 預設 header (雖然之後在 layout 還會設一次，但這裡先設比較保險)
       axios.defaults.headers.common["Authorization"] = token;
       
-      // 轉址到後台產品頁
       navigate("/admin/products");
     } catch (error) {
-      alert("登入失敗: " + (error.response?.data?.message || "請檢查帳號密碼"));
+      Swal.fire({
+        icon: "error",
+        title: "登入失敗",
+        text: error.response?.data?.message || "請檢查帳號密碼",
+        background: '#1f1f1f',
+        color: '#ffffff'
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
   return (
-    // 全螢幕深色背景
     <div className="min-h-screen flex items-center justify-center bg-dark-bg-950 px-4">
       <div className="bg-dark-bg-800 p-8 rounded-sm shadow-2xl border border-dark-bg-700 w-full max-w-md animate-[fadeIn_0.5s_ease-out]">
         
-        {/* LOGO 區塊 */}
         <div className="text-center mb-8">
           <h1 className="text-3xl font-bold text-white tracking-widest flex justify-center items-center gap-2">
             <span className="bg-tech-blue-500 w-2 h-8 block skew-x-[-15deg]"></span>
@@ -57,8 +56,9 @@ export default function LoginPage() {
 
         <form onSubmit={handleSubmit} className="space-y-6">
           <div>
-            <label className="block text-dark-text-300 text-sm font-bold mb-2 uppercase">Email Address</label>
+            <label htmlFor="username" className="block text-dark-text-300 text-sm font-bold mb-2 uppercase">Email Address</label>
             <input
+              id="username"
               type="email"
               name="username"
               className="w-full bg-dark-bg-900 border border-dark-bg-700 text-white p-3 rounded-sm focus:outline-none focus:border-tech-blue-500 focus:ring-1 focus:ring-tech-blue-500 transition"
@@ -71,8 +71,9 @@ export default function LoginPage() {
           </div>
 
           <div>
-            <label className="block text-dark-text-300 text-sm font-bold mb-2 uppercase">Password</label>
+            <label htmlFor="password" className="block text-dark-text-300 text-sm font-bold mb-2 uppercase">Password</label>
             <input
+              id="password"
               type="password"
               name="password"
               className="w-full bg-dark-bg-900 border border-dark-bg-700 text-white p-3 rounded-sm focus:outline-none focus:border-tech-blue-500 focus:ring-1 focus:ring-tech-blue-500 transition"
