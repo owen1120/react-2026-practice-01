@@ -3,6 +3,9 @@ import ReactDOM from 'react-dom/client'
 import { createHashRouter, RouterProvider } from "react-router-dom";
 import "./index.css";
 
+import { Provider } from "react-redux";
+import { store } from "./store/store";
+
 // === 前台頁面 ===
 import FrontLayout from "./pages/front/FrontLayout";
 import HomePage from "./pages/front/HomePage";
@@ -14,6 +17,7 @@ import CartPage from "./pages/front/CartPage";
 import LoginPage from "./pages/admin/LoginPage";
 import AdminLayout from "./pages/admin/AdminLayout";
 import AdminProductsPage from "./pages/admin/AdminProductsPage";
+import ToastMessage from './components/ToastMessage';
 
 const router = createHashRouter([
   {
@@ -44,6 +48,9 @@ const router = createHashRouter([
 
 ReactDOM.createRoot(document.getElementById('root')).render(
   <React.StrictMode>
-    <RouterProvider router={router} />
+    <Provider store={store}>
+      <ToastMessage />
+      <RouterProvider router={router} />
+    </Provider>
   </React.StrictMode>,
 )

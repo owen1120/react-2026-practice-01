@@ -2,12 +2,14 @@ import { useState } from "react";
 import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
-import Swal from "sweetalert2";
+import { useDispatch } from "react-redux";
+import { createMessage } from "../../store/messageSlice"; 
 
 const API_BASE = import.meta.env.VITE_API_BASE;
 
 export default function LoginPage() {
   const navigate = useNavigate();
+  const dispatch = useDispatch(); 
   const [isLoading, setIsLoading] = useState(false);
 
   const {
@@ -26,25 +28,23 @@ export default function LoginPage() {
     try {
       const res = await axios.post(`${API_BASE}/admin/signin`, data);
       const { token, expired } = res.data;
+
       document.cookie = `hexToken=${token}; expires=${new Date(expired)};`;
       axios.defaults.headers.common["Authorization"] = token;
-      Swal.fire({
-        icon: "success",
+
+      dispatch(createMessage({
         title: "登入成功",
-        showConfirmButton: false,
-        timer: 1500,
-        background: '#1f1f1f',
-        color: '#ffffff'
-      });
+        text: "歡迎回到管理後台",
+        icon: "success"
+      }));
+
       navigate("/admin/products");
     } catch (error) {
-      Swal.fire({
-        icon: "error",
+      dispatch(createMessage({
         title: "登入失敗",
         text: error.response?.data?.message || "請檢查帳號密碼",
-        background: '#1f1f1f',
-        color: '#ffffff'
-      });
+        icon: "error"
+      }));
     } finally {
       setIsLoading(false);
     }
@@ -70,7 +70,7 @@ export default function LoginPage() {
             <label htmlFor="username" className="block text-dark-text-300 text-sm font-bold mb-2 uppercase">Email Address</label>
             <input
               id="username"
-              type="email" 
+              type="email"
               {...register("username", { 
                 required: "Email 為必填欄位",
                 pattern: {
@@ -89,7 +89,7 @@ export default function LoginPage() {
             <label htmlFor="password" className="block text-dark-text-300 text-sm font-bold mb-2 uppercase">Password</label>
             <input
               id="password"
-              type="password" 
+              type="password"
               {...register("password", { required: "請輸入密碼" })}
               className={`w-full bg-dark-bg-900 border text-white p-3 rounded-sm focus:outline-none focus:ring-1 transition
                 ${errors.password ? 'border-red-500 focus:border-red-500 focus:ring-red-500' : 'border-dark-bg-700 focus:border-tech-blue-500 focus:ring-tech-blue-500'}`}

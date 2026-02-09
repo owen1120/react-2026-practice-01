@@ -1,8 +1,10 @@
 import { useEffect, useState } from "react";
 import axios from "axios";
 import { useParams } from "react-router-dom";
-import Swal from "sweetalert2";
-import ScreenLoading from "../../components/ScreenLoading"; 
+import ScreenLoading from "../../components/ScreenLoading";
+
+import { useDispatch } from "react-redux";
+import { createMessage } from "../../store/messageSlice";
 
 const API_BASE = import.meta.env.VITE_API_BASE;
 const API_PATH = import.meta.env.VITE_API_PATH;
@@ -12,6 +14,7 @@ export default function ProductDetailPage() {
   const [product, setProduct] = useState(null);
   const [qty, setQty] = useState(1);
   const [isLoading, setIsLoading] = useState(false);
+  const dispatch = useDispatch(); 
   
   useEffect(() => {
     const getProduct = async () => {
@@ -21,13 +24,17 @@ export default function ProductDetailPage() {
         setProduct(res.data.product);
       } catch (error) {
         console.error(error);
-        Swal.fire("錯誤", "找不到該產品", "error");
+        dispatch(createMessage({
+          title: "錯誤",
+          text: "找不到該產品",
+          icon: "error"
+        }));
       } finally {
         setIsLoading(false);
       }
     };
     getProduct();
-  }, [id]);
+  }, [id, dispatch]);
 
   const addToCart = async () => {
     setIsLoading(true);
@@ -35,13 +42,19 @@ export default function ProductDetailPage() {
       await axios.post(`${API_BASE}/api/${API_PATH}/cart`, {
         data: { product_id: product.id, qty: Number(qty) }
       });
-      Swal.fire({
-        icon: 'success', title: '已加入購物車', toast: true, position: 'top-end', showConfirmButton: false, timer: 1500, background: '#1f1f1f', color: '#ffffff'
-      });
+      
+      dispatch(createMessage({
+        title: "已加入購物車",
+        text: `已將 ${qty} 個 ${product.title} 加入購物車`,
+        icon: "success"
+      }));
+
     } catch (error) {
-      Swal.fire({
-        icon: 'error', title: '加入失敗', text: error.response?.data?.message, background: '#1f1f1f', color: '#ffffff'
-      });
+      dispatch(createMessage({
+        title: "加入失敗",
+        text: error.response?.data?.message || "無法加入購物車",
+        icon: "error"
+      }));
     } finally {
       setIsLoading(false);
     }

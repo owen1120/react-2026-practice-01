@@ -1,120 +1,74 @@
-import { Outlet, Link, useNavigate, useLocation } from "react-router-dom";
-import { useEffect } from "react";
+import { Outlet, Link, NavLink, useNavigate } from "react-router-dom";
+import { useDispatch } from "react-redux";
+import { createMessage } from "../../store/messageSlice"; 
 import axios from "axios";
-import Swal from "sweetalert2";
-
-const API_BASE = import.meta.env.VITE_API_BASE;
 
 export default function AdminLayout() {
   const navigate = useNavigate();
-  const location = useLocation();
+  const dispatch = useDispatch();
 
-  useEffect(() => {
-    const checkLogin = async () => {
-      try {
-        const token = document.cookie
-          .split("; ")
-          .find((row) => row.startsWith("hexToken="))
-          ?.split("=")[1];
-        
-        if (!token) throw new Error("找不到憑證，請重新登入");
-        
-        axios.defaults.headers.common["Authorization"] = token;
-        await axios.post(`${API_BASE}/api/user/check`);
-        
-      } catch (error) {
-        console.error(error);
-
-        if (!location.pathname.includes("/login")) {
-             Swal.fire({
-               icon: "error",
-               title: "驗證失敗",
-               text: "憑證過期或無效，請重新登入",
-               background: '#1f1f1f',
-               color: '#ffffff',
-               confirmButtonColor: '#00c3ff',
-               timer: 3000,
-               timerProgressBar: true
-             });
-             navigate("/login");
-        }
-      }
-    };
-    checkLogin();
-  }, [navigate, location]); 
-
-  const handleLogout = async () => {
-    try {
-      await axios.post(`${API_BASE}/logout`);
-    } catch (error) {
-      console.warn("登出 API 呼叫失敗 (可能 Token 已過期)", error);
-    }
-
+  const logout = () => {
     document.cookie = "hexToken=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
     
     delete axios.defaults.headers.common["Authorization"];
 
-    Swal.fire({
-      icon: "success",
+    dispatch(createMessage({
       title: "已登出",
       text: "您已安全登出系統",
-      background: '#1f1f1f',
-      color: '#ffffff',
-      showConfirmButton: false,
-      timer: 1500,
-      toast: true,
-      position: 'top-end'
-    });
+      icon: "success"
+    }));
 
     navigate("/login");
   };
 
-  const menuItems = [
-    { name: "產品管理 Products", path: "/admin/products" },
-    { name: "訂單管理 Orders", path: "/admin/orders" }, 
-  ];
-
   return (
-    <div className="flex min-h-screen bg-dark-bg-950 text-dark-text-300 font-sans">
-      <aside className="w-64 bg-dark-bg-900 border-r border-dark-bg-700 flex flex-col fixed h-full z-10">
-        <div className="p-6 border-b border-dark-bg-700">
-           <h2 className="text-xl font-bold text-white tracking-widest flex items-center gap-2">
-             <span className="bg-tech-blue-500 w-1.5 h-6 block skew-x-[-15deg]"></span>
-             ADMIN PANEL
-           </h2>
+    <div className="flex min-h-screen bg-dark-bg-950 font-sans text-white">
+      {/* === 左側側邊欄 === */}
+      <aside className="w-64 bg-dark-bg-900 border-r border-dark-bg-800 flex flex-col fixed h-full z-10">
+        <div className="p-6 border-b border-dark-bg-800">
+          <Link to="/" className="flex items-center gap-2 group">
+            <span className="bg-tech-blue-500 w-1.5 h-6 block skew-x-[-15deg] group-hover:bg-white transition"></span>
+            <span className="font-bold text-lg tracking-widest text-white group-hover:text-tech-blue-400 transition">
+              ADMIN PANEL
+            </span>
+          </Link>
         </div>
-        
-        <nav className="grow p-4 space-y-2">
-          {menuItems.map((item) => {
-            const isActive = location.pathname === item.path;
-            return (
-              <Link
-                key={item.path}
-                to={item.path}
-                className={`block px-4 py-3 rounded-sm transition duration-200 border-l-4 
-                  ${isActive 
-                    ? "border-tech-blue-500 bg-dark-bg-800 text-white font-bold" 
-                    : "border-transparent text-dark-text-500 hover:text-white hover:bg-dark-bg-800"
-                  }`}
-              >
-                {item.name}
-              </Link>
-            );
-          })}
+
+        <nav className="flex-1 p-4 space-y-2">
+          <p className="text-xs font-bold text-dark-text-500 uppercase tracking-wider mb-4 px-2">
+            Menu
+          </p>
+          
+          {/* 產品列表 */}
+          <NavLink 
+            to="/admin/products" 
+            className={({ isActive }) => 
+              `flex items-center gap-3 px-4 py-3 rounded-sm transition duration-200 font-bold tracking-wide
+              ${isActive 
+                ? 'bg-tech-blue-600/10 text-tech-blue-400 border-l-2 border-tech-blue-500' 
+                : 'text-dark-text-300 hover:bg-dark-bg-800 hover:text-white'}`
+            }
+          >
+            產品管理 Products
+          </NavLink>
+
         </nav>
 
-        <div className="p-4 border-t border-dark-bg-700">
-          <button
-            onClick={handleLogout}
-            className="w-full text-left px-4 py-2 text-red-400 hover:text-red-300 hover:bg-red-900/20 rounded-sm transition flex items-center gap-2"
+        <div className="p-4 border-t border-dark-bg-800">
+          <button 
+            onClick={logout}
+            className="w-full flex items-center justify-center gap-2 px-4 py-3 border border-dark-bg-600 rounded-sm text-dark-text-300 hover:border-red-500 hover:text-red-500 transition font-bold tracking-wide"
           >
-            <span>➜</span> 登出系統 Logout
+            登出系統 Logout
           </button>
         </div>
       </aside>
 
+      {/* === 右側內容區 === */}
       <main className="flex-1 ml-64 p-8">
-        <Outlet />
+        <div className="max-w-7xl mx-auto animate-[fadeIn_0.5s_ease-out]">
+          <Outlet />
+        </div>
       </main>
     </div>
   );

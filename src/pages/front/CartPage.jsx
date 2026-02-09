@@ -2,8 +2,10 @@ import { useEffect, useState } from "react";
 import axios from "axios";
 import { Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
-import Swal from "sweetalert2";
 import ScreenLoading from "../../components/ScreenLoading";
+
+import { useDispatch } from "react-redux";
+import { createMessage } from "../../store/messageSlice";
 
 const API_BASE = import.meta.env.VITE_API_BASE;
 const API_PATH = import.meta.env.VITE_API_PATH;
@@ -11,6 +13,7 @@ const API_PATH = import.meta.env.VITE_API_PATH;
 export default function CartPage() {
   const [cart, setCart] = useState({});
   const [isLoading, setIsLoading] = useState(true);
+  const dispatch = useDispatch(); 
 
   // 初始化表單驗證
   const {
@@ -49,10 +52,19 @@ export default function CartPage() {
     setIsLoading(true);
     try {
       await axios.delete(`${API_BASE}/api/${API_PATH}/cart/${id}`);
+      dispatch(createMessage({
+        title: "已移除商品",
+        text: "商品已從購物車移除",
+        icon: "success"
+      }));
       getCart();
     } catch (error) {
       console.error(error);
-      Swal.fire("錯誤", "刪除失敗", "error");
+      dispatch(createMessage({
+        title: "刪除失敗",
+        text: "無法移除商品",
+        icon: "error"
+      }));
       setIsLoading(false);
     }
   };
@@ -64,10 +76,19 @@ export default function CartPage() {
       await axios.put(`${API_BASE}/api/${API_PATH}/cart/${id}`, {
         data: { product_id: productId, qty: Number(newQty) }
       });
+      dispatch(createMessage({
+        title: "更新成功",
+        text: "已更新商品數量",
+        icon: "success"
+      }));
       getCart();
     } catch (error) {
       console.error(error);
-      Swal.fire("錯誤", "更新失敗", "error");
+      dispatch(createMessage({
+        title: "更新失敗",
+        text: "無法更新商品數量",
+        icon: "error"
+      }));
       setIsLoading(false);
     }
   };
@@ -77,10 +98,19 @@ export default function CartPage() {
     setIsLoading(true);
     try {
       await axios.delete(`${API_BASE}/api/${API_PATH}/carts`);
+      dispatch(createMessage({
+        title: "已清空購物車",
+        text: "購物車內容已全部移除",
+        icon: "success"
+      }));
       getCart();
     } catch (error) {
       console.error(error);
-      Swal.fire("錯誤", "清空失敗", "error");
+      dispatch(createMessage({
+        title: "清空失敗",
+        text: "無法清空購物車",
+        icon: "error"
+      }));
       setIsLoading(false);
     }
   };
@@ -103,25 +133,20 @@ export default function CartPage() {
     try {
       await axios.post(`${API_BASE}/api/${API_PATH}/order`, orderData);
       
-      Swal.fire({
-        icon: "success",
+      dispatch(createMessage({
         title: "訂單已建立",
         text: "我們將盡快為您出貨！",
-        background: '#1f1f1f',
-        color: '#ffffff',
-        confirmButtonColor: '#06b6d4',
-      });
+        icon: "success"
+      }));
       
-      reset(); 
+      reset();
       getCart(); 
     } catch (error) {
-      Swal.fire({
-        icon: "error",
+      dispatch(createMessage({
         title: "建立訂單失敗",
         text: error.response?.data?.message,
-        background: '#1f1f1f',
-        color: '#ffffff'
-      });
+        icon: "error"
+      }));
     } finally {
       setIsLoading(false);
     }
