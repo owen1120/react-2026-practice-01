@@ -100,16 +100,17 @@ export default function ProductDetailPage() {
                   <select 
                     value={qty} 
                     onChange={(e) => setQty(Number(e.target.value))}
-                    className="bg-dark-bg-900 border border-dark-bg-700 text-white px-4 py-2 rounded-sm focus:border-tech-blue-500 outline-none"
+                    className="bg-dark-bg-900 border border-dark-bg-700 text-white px-4 py-2 rounded-sm focus:border-tech-blue-500 outline-none cursor-pointer"
                   >
                     {[...Array(10)].map((_, i) => (<option key={i + 1} value={i + 1}>{i + 1}</option>))}
                   </select>
                 </div>
                 
                 <button 
+                  type="button"
                   onClick={addToCart}
                   disabled={isLoading}
-                  className="w-full bg-tech-blue-600 text-white font-bold py-4 rounded-sm hover:bg-tech-blue-500 hover:shadow-lg hover:shadow-tech-blue-900/30 transition uppercase tracking-widest"
+                  className="w-full bg-tech-blue-600 text-white font-bold py-4 rounded-sm hover:bg-tech-blue-500 hover:shadow-lg hover:shadow-tech-blue-900/30 transition uppercase tracking-widest cursor-pointer"
                 >
                   ADD TO CART 加入購物車
                 </button>

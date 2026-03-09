@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
@@ -11,6 +11,7 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const dispatch = useDispatch(); 
   const [isLoading, setIsLoading] = useState(false);
+  const [isChecking, setIsChecking] = useState(true); 
 
   const {
     register,
@@ -23,13 +24,39 @@ export default function LoginPage() {
     },
   });
 
+  useEffect(() => {
+    const checkLogin = async () => {
+      try {
+        const token = document.cookie.replace(
+          /(?:(?:^|.*;\s*)hexToken\s*=\s*([^;]*).*$)|^.*$/,
+          "$1"
+        );
+
+        if (!token) {
+          setIsChecking(false);
+          return;
+        }
+
+        axios.defaults.headers.common["Authorization"] = token;
+        await axios.post(`${API_BASE}/api/user/check`);
+        
+        navigate("/admin/products");
+      } catch (error) {
+        console.error("登入狀態檢查失敗", error);
+        setIsChecking(false);
+      }
+    };
+
+    checkLogin();
+  }, [navigate]);
+
   const onSubmit = async (data) => {
     setIsLoading(true);
     try {
       const res = await axios.post(`${API_BASE}/admin/signin`, data);
       const { token, expired } = res.data;
 
-      document.cookie = `hexToken=${token}; expires=${new Date(expired)};`;
+      document.cookie = `hexToken=${token}; expires=${new Date(expired)}; path=/;`; 
       axios.defaults.headers.common["Authorization"] = token;
 
       dispatch(createMessage({
@@ -49,6 +76,16 @@ export default function LoginPage() {
       setIsLoading(false);
     }
   };
+
+  if (isChecking) {
+    return (
+      <div className="min-h-screen bg-dark-bg-950 flex justify-center items-center">
+        <div className="text-tech-blue-500 font-bold tracking-widest animate-pulse">
+          CHECKING STATUS...
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-dark-bg-950 px-4 relative">

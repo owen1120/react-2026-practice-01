@@ -7,6 +7,7 @@ const API_PATH = import.meta.env.VITE_API_PATH;
 
 export default function ProductModal({ isOpen, tempProduct, getProducts, closeProductModal, isNew }) {
   const [modalData, setModalData] = useState(tempProduct);
+  const [isUploading, setIsUploading] = useState(false); 
 
   useEffect(() => {
     if (isOpen) {
@@ -31,6 +32,50 @@ export default function ProductModal({ isOpen, tempProduct, getProducts, closePr
     const newImages = [...modalData.imagesUrl];
     newImages[index] = value;
     setModalData({ ...modalData, imagesUrl: newImages });
+  };
+
+  const handleFileUpload = async (e, target, index = null) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("file-to-upload", file);
+
+    setIsUploading(true);
+    try {
+      const res = await axios.post(`${API_BASE}/api/${API_PATH}/admin/upload`, formData);
+      const uploadedUrl = res.data.imageUrl;
+
+      if (target === "main") {
+        setModalData({ ...modalData, imageUrl: uploadedUrl });
+      } else if (target === "sub") {
+        const newImages = [...modalData.imagesUrl];
+        newImages[index] = uploadedUrl;
+        setModalData({ ...modalData, imagesUrl: newImages });
+      }
+
+      Swal.fire({
+        toast: true,
+        position: 'top-end',
+        icon: 'success',
+        title: '圖片上傳成功',
+        showConfirmButton: false,
+        timer: 1500,
+        background: '#1f1f1f',
+        color: '#ffffff'
+      });
+    } catch (error) {
+      Swal.fire({
+        icon: 'error',
+        title: '上傳失敗',
+        text: error.response?.data?.message || "檔案可能過大或格式不符",
+        background: '#1f1f1f',
+        color: '#ffffff'
+      });
+    } finally {
+      setIsUploading(false);
+      e.target.value = ""; 
+    }
   };
 
   const addImage = () => {
@@ -103,7 +148,7 @@ export default function ProductModal({ isOpen, tempProduct, getProducts, closePr
           <h3 className="text-xl font-bold text-white tracking-wide">
             {isNew ? "建立新產品" : "編輯產品"}
           </h3>
-          <button onClick={closeProductModal} className="text-dark-text-500 hover:text-white transition">
+          <button type="button" onClick={closeProductModal} disabled={isUploading} className="text-dark-text-500 hover:text-white transition disabled:opacity-50">
             ✕
           </button>
         </div>
@@ -116,7 +161,7 @@ export default function ProductModal({ isOpen, tempProduct, getProducts, closePr
             <div className="col-span-1 space-y-4">
               <div>
                 <label htmlFor="imageUrl" className="block text-sm font-bold text-dark-text-300 mb-2">
-                  主要圖片網址
+                  主要圖片
                 </label>
                 <input
                   id="imageUrl"
@@ -124,8 +169,16 @@ export default function ProductModal({ isOpen, tempProduct, getProducts, closePr
                   name="imageUrl"
                   value={modalData.imageUrl || ""}
                   onChange={handleInputChange}
-                  className="w-full bg-dark-bg-900 border border-dark-bg-700 text-white p-2 rounded-sm focus:border-tech-blue-500 outline-none"
+                  className="w-full bg-dark-bg-900 border border-dark-bg-700 text-white p-2 rounded-sm focus:border-tech-blue-500 outline-none mb-2"
                   placeholder="請輸入圖片連結"
+                />
+                {/* 檔案上傳 Input */}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => handleFileUpload(e, "main")}
+                  disabled={isUploading}
+                  className="w-full text-sm text-dark-text-500 file:mr-4 file:py-2 file:px-4 file:rounded-sm file:border-0 file:text-sm file:font-bold file:bg-tech-blue-600/20 file:text-tech-blue-400 hover:file:bg-tech-blue-600/30 transition cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
                 />
                 {modalData.imageUrl && (
                   <img src={modalData.imageUrl} alt="主圖" className="w-full h-40 object-cover mt-2 rounded-sm border border-dark-bg-700" />
@@ -136,30 +189,38 @@ export default function ProductModal({ isOpen, tempProduct, getProducts, closePr
               <div className="border-t border-dark-bg-700 pt-4">
                  <h4 className="block text-sm font-bold text-dark-text-300 mb-2">更多圖片</h4>
                  {modalData.imagesUrl?.map((url, index) => (
-                   <div key={index} className="mb-3">
+                   <div key={index} className="mb-4 bg-dark-bg-900/50 p-2 border border-dark-bg-700 rounded-sm">
                      <label htmlFor={`imagesUrl-${index}`} className="text-xs text-dark-text-500 mb-1 block">
-                       圖片網址 {index + 1}
+                       圖片 {index + 1}
                      </label>
                      <input
                         id={`imagesUrl-${index}`}
                         type="text"
                         value={url}
                         onChange={(e) => handleImageChange(e, index)}
-                        className="w-full bg-dark-bg-900 border border-dark-bg-700 text-white p-2 rounded-sm focus:border-tech-blue-500 outline-none mb-1"
-                        placeholder={`https://...`}
+                        className="w-full bg-dark-bg-900 border border-dark-bg-700 text-white p-2 rounded-sm focus:border-tech-blue-500 outline-none mb-2"
+                        placeholder={`輸入圖片連結...`}
                       />
-                      {url && <img src={url} alt={`副圖 ${index+1}`} className="w-full h-24 object-cover rounded-sm mt-1 border border-dark-bg-700" />}
+                      {/* 多圖的檔案上傳 Input */}
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={(e) => handleFileUpload(e, "sub", index)}
+                        disabled={isUploading}
+                        className="w-full text-xs text-dark-text-500 file:mr-2 file:py-1 file:px-2 file:rounded-sm file:border-0 file:text-xs file:font-bold file:bg-dark-bg-700 file:text-dark-text-300 hover:file:bg-dark-bg-600 hover:file:text-white transition cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+                      />
+                      {url && <img src={url} alt={`副圖 ${index+1}`} className="w-full h-24 object-cover rounded-sm mt-2 border border-dark-bg-700" />}
                    </div>
                  ))}
                  
                  <div className="flex gap-2 mt-2">
                    {(!modalData.imagesUrl?.length || modalData.imagesUrl[modalData.imagesUrl.length - 1]) && (
-                     <button onClick={addImage} className="flex-1 py-2 border border-tech-blue-500 text-tech-blue-500 rounded-sm hover:bg-tech-blue-500 hover:text-white transition text-sm font-bold">
-                       新增圖片
+                     <button type="button" onClick={addImage} disabled={isUploading} className="flex-1 py-2 border border-tech-blue-500 text-tech-blue-500 rounded-sm hover:bg-tech-blue-500 hover:text-white transition text-sm font-bold disabled:opacity-50">
+                       新增圖片欄位
                      </button>
                    )}
                    {modalData.imagesUrl?.length > 0 && (
-                     <button onClick={removeImage} className="flex-1 py-2 border border-red-500 text-red-500 rounded-sm hover:bg-red-500 hover:text-white transition text-sm font-bold">
+                     <button type="button" onClick={removeImage} disabled={isUploading} className="flex-1 py-2 border border-red-500 text-red-500 rounded-sm hover:bg-red-500 hover:text-white transition text-sm font-bold disabled:opacity-50">
                        刪除最後一張
                      </button>
                    )}
@@ -285,16 +346,20 @@ export default function ProductModal({ isOpen, tempProduct, getProducts, closePr
         {/* Footer */}
         <div className="p-4 border-t border-dark-bg-700 flex justify-end gap-3 bg-dark-bg-900/50 rounded-b-sm">
            <button 
+             type="button"
              onClick={closeProductModal}
-             className="px-6 py-2 border border-dark-text-500 text-dark-text-300 rounded-sm hover:bg-dark-bg-700 hover:text-white transition font-bold"
+             disabled={isUploading}
+             className="px-6 py-2 border border-dark-text-500 text-dark-text-300 rounded-sm hover:bg-dark-bg-700 hover:text-white transition font-bold disabled:opacity-50"
            >
              取消
            </button>
            <button 
+             type="button"
              onClick={submit}
-             className="px-6 py-2 bg-tech-blue-600 text-white rounded-sm hover:bg-tech-blue-500 shadow-lg shadow-tech-blue-900/30 transition font-bold"
+             disabled={isUploading}
+             className="px-6 py-2 bg-tech-blue-600 text-white rounded-sm hover:bg-tech-blue-500 shadow-lg shadow-tech-blue-900/30 transition font-bold disabled:opacity-50 flex items-center gap-2"
            >
-             確認儲存
+             {isUploading ? "圖片處理中..." : "確認儲存"}
            </button>
         </div>
 

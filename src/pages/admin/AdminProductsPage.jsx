@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import axios from "axios";
 import Swal from "sweetalert2";
 import ProductModal from "../../components/ProductModal";
@@ -17,7 +17,7 @@ export default function AdminProductsPage() {
   const [isProductModalOpen, setIsProductModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
-  async function getProducts(page = 1) {
+  const getProducts = useCallback(async (page = 1) => {
     try {
       const res = await axios.get(`${API_BASE}/api/${API_PATH}/admin/products?page=${page}`);
       setProducts(res.data.products);
@@ -32,34 +32,15 @@ export default function AdminProductsPage() {
         color: '#ffffff'
       });
     }
-  }
+  }, []); 
 
   useEffect(() => {
-    const init = async () => {
-      try {
-        const token = document.cookie.replace(
-          /(?:(?:^|.*;\s*)hexToken\s*=\s*([^;]*).*$)|^.*$/,
-          "$1"
-        );
-
-        if (token) {
-          axios.defaults.headers.common['Authorization'] = token;
-          await getProducts();
-        } else {
-          await Swal.fire({
-            icon: "warning",
-            title: "請先登入",
-            background: '#1f1f1f',
-            color: '#ffffff'
-          });
-        }
-      } catch (err) {
-        console.error(err);
-      }
+    const fetchData = async () => {
+      await getProducts();
     };
-
-    init(); 
-  }, []); 
+    
+    fetchData();
+  }, [getProducts]); 
 
   // === Modal 控制 ===
   const openProductModal = (status, product) => {
@@ -121,6 +102,7 @@ export default function AdminProductsPage() {
           產品列表管理
         </h2>
         <button
+          type="button"
           onClick={() => openProductModal("create")}
           className="bg-tech-blue-600 text-white px-4 py-2 rounded-sm font-bold hover:bg-tech-blue-500 transition shadow-lg shadow-tech-blue-900/20"
         >
@@ -169,12 +151,14 @@ export default function AdminProductsPage() {
                 <td className="p-4 text-center">
                   <div className="flex justify-center gap-2">
                     <button
+                      type="button"
                       onClick={() => openProductModal("edit", product)}
                       className="text-tech-blue-400 hover:text-white border border-tech-blue-400/50 hover:bg-tech-blue-600 hover:border-transparent px-3 py-1 rounded-sm text-sm transition"
                     >
                       編輯
                     </button>
                     <button
+                    type="button"
                       onClick={() => openDeleteModal(product)}
                       className="text-red-400 hover:text-white border border-red-400/50 hover:bg-red-600 hover:border-transparent px-3 py-1 rounded-sm text-sm transition"
                     >
@@ -192,13 +176,14 @@ export default function AdminProductsPage() {
         <nav>
            <ul className="flex gap-1">
              <li className={`${!pagination.has_pre && 'opacity-50 pointer-events-none'}`}>
-               <button onClick={() => getProducts(pagination.current_page - 1)} className="px-3 py-1 bg-dark-bg-800 border border-dark-bg-700 text-dark-text-300 hover:bg-dark-bg-700 rounded-sm">
+               <button type="button" onClick={() => getProducts(pagination.current_page - 1)} className="px-3 py-1 bg-dark-bg-800 border border-dark-bg-700 text-dark-text-300 hover:bg-dark-bg-700 rounded-sm">
                  &lt;
                </button>
              </li>
-             {Array.from({ length: pagination.total_pages }).map((_, i) => (
+             {Array.from({ length: pagination.total_pages || 0 }).map((_, i) => (
                <li key={i}>
                  <button
+                   type="button"
                    onClick={() => getProducts(i + 1)}
                    className={`px-3 py-1 border rounded-sm transition ${
                      pagination.current_page === i + 1
@@ -211,7 +196,7 @@ export default function AdminProductsPage() {
                </li>
              ))}
              <li className={`${!pagination.has_next && 'opacity-50 pointer-events-none'}`}>
-               <button onClick={() => getProducts(pagination.current_page + 1)} className="px-3 py-1 bg-dark-bg-800 border border-dark-bg-700 text-dark-text-300 hover:bg-dark-bg-700 rounded-sm">
+               <button type="button" onClick={() => getProducts(pagination.current_page + 1)} className="px-3 py-1 bg-dark-bg-800 border border-dark-bg-700 text-dark-text-300 hover:bg-dark-bg-700 rounded-sm">
                  &gt;
                </button>
              </li>
